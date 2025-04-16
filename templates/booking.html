@@ -1,0 +1,220 @@
+{% extends 'layout.html' %}
+
+{% block title %}Book {{ room.name }} - Luxury Hotel{% endblock %}
+
+{% block content %}
+<!-- Booking Section -->
+<section class="py-5">
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('rooms') }}">Rooms</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('room_detail', room_id=room.id) }}">{{ room.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Booking</li>
+            </ol>
+        </nav>
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">Book Your Stay</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>{{ room.name }}</h5>
+                                <p class="mb-2">${{ "%.2f"|format(room.price) }} per night</p>
+                                <p class="mb-0">Maximum capacity: {{ room.capacity }} guests</p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <img src="{{ room.image_url }}" alt="{{ room.name }}" class="img-fluid rounded" style="max-height: 100px; object-fit: cover;">
+                            </div>
+                        </div>
+                        
+                        <form id="booking-form" method="post" data-room-id="{{ room.id }}" data-room-capacity="{{ room.capacity }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="check_in_date" class="form-label">Check-in Date *</label>
+                                    <input type="date" class="form-control" id="check_in_date" name="check_in_date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="check_out_date" class="form-label">Check-out Date *</label>
+                                    <input type="date" class="form-control" id="check_out_date" name="check_out_date" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="num_guests" class="form-label">Number of Guests *</label>
+                                <select class="form-select" id="num_guests" name="num_guests" required>
+                                    {% for i in range(1, room.capacity + 1) %}
+                                        <option value="{{ i }}">{{ i }} {{ 'Person' if i == 1 else 'People' }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div id="availability-message"></div>
+                            
+                            <hr class="my-4">
+                            
+                            <h5 class="mb-3">Guest Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="guest_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="guest_name" name="guest_name" required>
+                                    <div class="invalid-feedback">
+                                        Please provide your full name.
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="guest_email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="guest_email" name="guest_email" required>
+                                    <div class="invalid-feedback">
+                                        Please provide a valid email address.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="guest_phone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="guest_phone" name="guest_phone" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid phone number.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="special_requests" class="form-label">Special Requests</label>
+                                <textarea class="form-control" id="special_requests" name="special_requests" rows="3"></textarea>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <h5 class="mb-3">Booking Summary</h5>
+                            <div class="card bg-light mb-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Room Rate:</span>
+                                        <span>${{ "%.2f"|format(room.price) }} / night</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Tax & Service Fee (10%):</span>
+                                        <span>${{ "%.2f"|format(room.price * 0.1) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Total per night:</span>
+                                        <span>${{ "%.2f"|format(room.price * 1.1) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Number of nights:</span>
+                                        <span id="num-nights">-</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Estimated Total:</span>
+                                        <span id="total-price">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">terms and conditions</a> *
+                                </label>
+                                <div class="invalid-feedback">
+                                    You must agree to the terms and conditions.
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Booking Terms</h6>
+                <p>By booking a room at Luxury Hotel, you agree to the following terms and conditions:</p>
+                <ul>
+                    <li>Check-in time is from 2:00 PM, and check-out time is until 12:00 noon.</li>
+                    <li>A valid credit card is required to confirm your reservation. Your card will not be charged at the time of booking.</li>
+                    <li>Full payment is due upon check-in.</li>
+                    <li>Cancellations must be made at least 24 hours before the check-in date for a full refund.</li>
+                    <li>Cancellations made within 24 hours of the check-in date will incur a fee equivalent to one night's stay.</li>
+                    <li>No-shows will be charged the full amount of the reservation.</li>
+                    <li>Guests must be at least 18 years of age to check-in.</li>
+                    <li>A valid photo ID is required at check-in.</li>
+                </ul>
+                
+                <h6>Hotel Policies</h6>
+                <ul>
+                    <li>Luxury Hotel is a non-smoking property. A cleaning fee of $250 will be charged for smoking in rooms.</li>
+                    <li>Pets are not allowed, except for service animals.</li>
+                    <li>Quiet hours are from 10:00 PM to 7:00 AM.</li>
+                    <li>The hotel is not responsible for any loss or damage to personal belongings.</li>
+                    <li>Guests will be held liable for any damage to hotel property during their stay.</li>
+                </ul>
+                
+                <h6>Privacy Policy</h6>
+                <p>Luxury Hotel respects your privacy and is committed to protecting your personal data. We will only use your personal information to administer your account and to provide the products and services you have requested from us.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkInDate = document.getElementById('check_in_date');
+    const checkOutDate = document.getElementById('check_out_date');
+    const numNightsEl = document.getElementById('num-nights');
+    const totalPriceEl = document.getElementById('total-price');
+    const roomPrice = {{ room.price }};
+    
+    // Calculate total price function
+    function calculateTotal() {
+        if (checkInDate.value && checkOutDate.value) {
+            const checkIn = new Date(checkInDate.value);
+            const checkOut = new Date(checkOutDate.value);
+            
+            if (checkIn < checkOut) {
+                // Calculate number of nights
+                const timeDiff = checkOut.getTime() - checkIn.getTime();
+                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                
+                // Update display
+                numNightsEl.textContent = nights;
+                const totalPrice = (roomPrice * 1.1 * nights).toFixed(2);
+                totalPriceEl.textContent = '$' + totalPrice;
+            }
+        }
+    }
+    
+    // Call the function when dates change
+    if (checkInDate && checkOutDate) {
+        checkInDate.addEventListener('change', calculateTotal);
+        checkOutDate.addEventListener('change', calculateTotal);
+    }
+});
+</script>
+{% endblock %}

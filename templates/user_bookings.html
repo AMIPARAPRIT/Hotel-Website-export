@@ -1,0 +1,124 @@
+{% extends 'layout.html' %}
+
+{% block title %}My Bookings - Luxury Hotel{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <h1 class="mb-4">My Bookings</h1>
+        
+        {% if bookings %}
+            <div class="row">
+                {% for booking in bookings %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Booking #{{ booking.id }}</h5>
+                            <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                {{ booking.status }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6>Room Details</h6>
+                                    <p class="mb-1"><strong>Room:</strong> {{ booking.room.name }}</p>
+                                    <p class="mb-1"><strong>Price:</strong> ${{ "%.2f"|format(booking.room.price) }} / night</p>
+                                    <p class="mb-1"><strong>Capacity:</strong> {{ booking.room.capacity }} guests</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Booking Info</h6>
+                                    <p class="mb-1"><strong>Check-in:</strong> {{ booking.check_in_date.strftime('%Y-%m-%d') }}</p>
+                                    <p class="mb-1"><strong>Check-out:</strong> {{ booking.check_out_date.strftime('%Y-%m-%d') }}</p>
+                                    <p class="mb-1"><strong>Guests:</strong> {{ booking.num_guests }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Booked on {{ booking.created_at.strftime('%Y-%m-%d') }}</small>
+                                
+                                {% set nights = (booking.check_out_date - booking.check_in_date).days %}
+                                {% set total = booking.room.price * nights %}
+                                
+                                <span class="fw-bold">${{ "%.2f"|format(total) }}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewBookingModal{{ booking.id }}">
+                                View Details
+                            </button>
+                            {% if booking.status == 'pending' %}
+                                <form action="{{ url_for('cancel_booking', booking_id=booking.id) }}" method="post">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                        Cancel Booking
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View Booking Modal -->
+                <div class="modal fade" id="viewBookingModal{{ booking.id }}" tabindex="-1" aria-labelledby="viewBookingModalLabel{{ booking.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewBookingModalLabel{{ booking.id }}">Booking Details #{{ booking.id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Guest Information</h6>
+                                        <p><strong>Name:</strong> {{ booking.guest_name }}</p>
+                                        <p><strong>Email:</strong> {{ booking.guest_email }}</p>
+                                        <p><strong>Phone:</strong> {{ booking.guest_phone }}</p>
+                                        <p><strong>Number of Guests:</strong> {{ booking.num_guests }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Room Information</h6>
+                                        <p><strong>Room:</strong> {{ booking.room.name }}</p>
+                                        <p><strong>Price per Night:</strong> ${{ "%.2f"|format(booking.room.price) }}</p>
+                                        <p><strong>Check-in Date:</strong> {{ booking.check_in_date.strftime('%Y-%m-%d') }}</p>
+                                        <p><strong>Check-out Date:</strong> {{ booking.check_out_date.strftime('%Y-%m-%d') }}</p>
+                                        
+                                        {% set nights = (booking.check_out_date - booking.check_in_date).days %}
+                                        {% set total = booking.room.price * nights %}
+                                        
+                                        <p><strong>Number of Nights:</strong> {{ nights }}</p>
+                                        <p><strong>Total Amount:</strong> ${{ "%.2f"|format(total) }}</p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Status:</strong> 
+                                        <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                            {{ booking.status }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <strong>Booking Date:</strong> {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="window.print()">
+                                    <i class="fas fa-print me-1"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p>You don't have any bookings yet.</p>
+                <a href="{{ url_for('rooms') }}" class="btn btn-primary mt-2">Browse Rooms</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

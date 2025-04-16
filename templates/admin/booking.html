@@ -1,0 +1,348 @@
+{% extends 'layout.html' %}
+
+{% block title %}Manage Bookings - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar admin-sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_rooms') }}">
+                            <i class="fas fa-bed me-2"></i>
+                            Rooms
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_bookings') }}">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Manage Bookings</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printBookings()">
+                            <i class="fas fa-print me-1"></i> Print
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportBookings()">
+                            <i class="fas fa-file-export me-1"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="booking-search" placeholder="Search by name, email or room...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <form id="date-filter-form" class="d-flex">
+                        <input type="date" id="filter-start-date" class="form-control me-2" placeholder="Start Date">
+                        <input type="date" id="filter-end-date" class="form-control me-2" placeholder="End Date">
+                        <button type="submit" class="btn btn-primary me-2">Filter</button>
+                        <button type="button" id="reset-filter" class="btn btn-secondary">Reset</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status filters -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="Status filters">
+                    <button type="button" class="btn btn-outline-secondary active" data-status="all">All</button>
+                    <button type="button" class="btn btn-outline-warning" data-status="pending">Pending</button>
+                    <button type="button" class="btn btn-outline-success" data-status="confirmed">Confirmed</button>
+                    <button type="button" class="btn btn-outline-danger" data-status="cancelled">Cancelled</button>
+                </div>
+            </div>
+
+            <!-- Bookings Table -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">All Bookings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Guest Name</th>
+                                    <th>Email</th>
+                                    <th>User</th>
+                                    <th>Room</th>
+                                    <th>Check-in</th>
+                                    <th>Check-out</th>
+                                    <th>Guests</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in bookings %}
+                                <tr class="booking-row" data-status="{{ booking.status }}">
+                                    <td>{{ booking.id }}</td>
+                                    <td class="guest-name">{{ booking.guest_name }}</td>
+                                    <td class="guest-email">{{ booking.guest_email }}</td>
+                                    <td class="user-name">{{ booking.user.username }}</td>
+                                    <td class="room-name">{{ booking.room.name }}</td>
+                                    <td class="check-in-date">{{ booking.check_in_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ booking.check_out_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ booking.num_guests }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                            {{ booking.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ booking.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ booking.id }}">
+                                                <li>
+                                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#viewBookingModal{{ booking.id }}">
+                                                        <i class="fas fa-eye me-2"></i> View Details
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ booking.id }}">
+                                                        <i class="fas fa-edit me-2"></i> Update Status
+                                                    </button>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="mailto:{{ booking.guest_email }}">
+                                                        <i class="fas fa-envelope me-2"></i> Email Guest
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <!-- View Booking Modal -->
+                                        <div class="modal fade" id="viewBookingModal{{ booking.id }}" tabindex="-1" aria-labelledby="viewBookingModalLabel{{ booking.id }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="viewBookingModalLabel{{ booking.id }}">Booking Details #{{ booking.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <h6>Guest Information</h6>
+                                                                <p><strong>Name:</strong> {{ booking.guest_name }}</p>
+                                                                <p><strong>Email:</strong> {{ booking.guest_email }}</p>
+                                                                <p><strong>Phone:</strong> {{ booking.guest_phone }}</p>
+                                                                <p><strong>User Account:</strong> {{ booking.user.username }}</p>
+                                                                <p><strong>Number of Guests:</strong> {{ booking.num_guests }}</p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <h6>Room Information</h6>
+                                                                <p><strong>Room:</strong> {{ booking.room.name }}</p>
+                                                                <p><strong>Price per Night:</strong> ${{ "%.2f"|format(booking.room.price) }}</p>
+                                                                <p><strong>Check-in Date:</strong> {{ booking.check_in_date.strftime('%Y-%m-%d') }}</p>
+                                                                <p><strong>Check-out Date:</strong> {{ booking.check_out_date.strftime('%Y-%m-%d') }}</p>
+                                                                
+                                                                {% set nights = (booking.check_out_date - booking.check_in_date).days %}
+                                                                {% set total = booking.room.price * nights %}
+                                                                
+                                                                <p><strong>Number of Nights:</strong> {{ nights }}</p>
+                                                                <p><strong>Total Amount:</strong> ${{ "%.2f"|format(total) }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <hr>
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <strong>Status:</strong> 
+                                                                <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                                                    {{ booking.status }}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <strong>Booking Date:</strong> {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="button" class="btn btn-primary" onclick="printBookingDetails({{ booking.id }})">
+                                                            <i class="fas fa-print me-1"></i> Print
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Update Status Modal -->
+                                        <div class="modal fade" id="updateStatusModal{{ booking.id }}" tabindex="-1" aria-labelledby="updateStatusModalLabel{{ booking.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="updateStatusModalLabel{{ booking.id }}">Update Booking Status</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <form action="{{ url_for('update_booking_status', booking_id=booking.id) }}" method="post" class="booking-status-form">
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label for="status{{ booking.id }}" class="form-label">Status</label>
+                                                                <select class="form-select" id="status{{ booking.id }}" name="status">
+                                                                    <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                                    <option value="confirmed" {% if booking.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                                                    <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Update Status</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center">No bookings found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status filtering
+    const statusButtons = document.querySelectorAll('.btn-group[role="group"] button');
+    const bookingRows = document.querySelectorAll('.booking-row');
+    
+    statusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active button
+            statusButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const status = this.getAttribute('data-status');
+            
+            // Filter rows
+            bookingRows.forEach(row => {
+                if (status === 'all' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Print bookings function
+    window.printBookings = function() {
+        window.print();
+    };
+    
+    // Print individual booking details
+    window.printBookingDetails = function(bookingId) {
+        const modalContent = document.querySelector(`#viewBookingModal${bookingId} .modal-content`).cloneNode(true);
+        
+        // Remove buttons from print view
+        const footer = modalContent.querySelector('.modal-footer');
+        if (footer) {
+            modalContent.removeChild(footer);
+        }
+        
+        // Create print window
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Booking Details #${bookingId}</title>
+                    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+                    <style>
+                        body { padding: 20px; }
+                        @media print {
+                            .modal-header button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1 class="mb-4">Luxury Hotel - Booking Details #${bookingId}</h1>
+                        ${modalContent.outerHTML}
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };
+                    </script>
+                </body>
+            </html>
+        `);
+    };
+    
+    // Export bookings to CSV
+    window.exportBookings = function() {
+        const table = document.querySelector('table');
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('th, td');
+            const rowData = Array.from(cells)
+                .map(cell => {
+                    // Get text content but skip the buttons/status spans
+                    if (cell.querySelector('.dropdown') || cell.querySelector('.badge')) {
+                        return cell.textContent.trim().replace(/\s+/g, ' ').replace('Actions', '');
+                    }
+                    return `"${cell.textContent.trim().replace(/"/g, '""')}"`;
+                })
+                .join(',');
+            csv.push(rowData);
+        });
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'bookings_export.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+});
+</script>
+{% endblock %}

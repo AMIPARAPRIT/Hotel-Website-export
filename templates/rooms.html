@@ -1,0 +1,229 @@
+{% extends 'layout.html' %}
+
+{% block title %}Our Rooms - Luxury Hotel{% endblock %}
+
+{% block content %}
+<!-- Rooms Banner -->
+<section class="py-5 bg-dark text-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto text-center">
+                <h1 class="fw-bold mb-3">Our Rooms & Suites</h1>
+                <p class="lead">Choose from our selection of luxurious accommodations</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Rooms Listing -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <!-- Filters -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Filter Rooms</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="filter-form">
+                            <div class="mb-3">
+                                <label for="price-range" class="form-label">Price Range</label>
+                                <div class="d-flex align-items-center">
+                                    <span>$0</span>
+                                    <input type="range" class="form-range mx-2" id="price-range" min="0" max="500" step="10" value="500">
+                                    <span>$<span id="price-value">500</span></span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Room Capacity</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1-2" id="capacity-1-2" checked>
+                                    <label class="form-check-label" for="capacity-1-2">
+                                        1-2 Persons
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="3-4" id="capacity-3-4" checked>
+                                    <label class="form-check-label" for="capacity-3-4">
+                                        3-4 Persons
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="5+" id="capacity-5" checked>
+                                    <label class="form-check-label" for="capacity-5">
+                                        5+ Persons
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Amenities</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="WiFi" id="wifi" checked>
+                                    <label class="form-check-label" for="wifi">
+                                        Wi-Fi
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="TV" id="tv" checked>
+                                    <label class="form-check-label" for="tv">
+                                        TV
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="AC" id="ac" checked>
+                                    <label class="form-check-label" for="ac">
+                                        AC
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Mini-bar" id="minibar" checked>
+                                    <label class="form-check-label" for="minibar">
+                                        Mini-bar
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button type="button" id="apply-filter" class="btn btn-primary w-100">Apply Filters</button>
+                            <button type="button" id="reset-filter" class="btn btn-outline-secondary w-100 mt-2">Reset</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Available Rooms</h3>
+                    <div class="d-flex align-items-center">
+                        <label for="sort-by" class="me-2">Sort by:</label>
+                        <select class="form-select form-select-sm" id="sort-by">
+                            <option value="price-asc">Price: Low to High</option>
+                            <option value="price-desc">Price: High to Low</option>
+                            <option value="capacity-asc">Capacity: Low to High</option>
+                            <option value="capacity-desc">Capacity: High to Low</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row" id="rooms-container">
+                    {% for room in rooms %}
+                    <div class="col-md-6 mb-4 room-item" 
+                         data-price="{{ room.price }}" 
+                         data-capacity="{{ room.capacity }}">
+                        <div class="card h-100 room-card">
+                            <img src="{{ room.image_url }}" class="card-img-top" alt="{{ room.name }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ room.name }}</h5>
+                                <p class="card-text">{{ room.description | truncate(100) }}</p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fw-bold text-primary">${{ "%.2f"|format(room.price) }} / night</span>
+                                    <span class="badge bg-info"><i class="fas fa-user me-1"></i> {{ room.capacity }} Guests</span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <strong>Amenities:</strong> {{ room.amenities }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 d-flex justify-content-between">
+                                <a href="{{ url_for('room_detail', room_id=room.id) }}" class="btn btn-outline-primary">View Details</a>
+                                <a href="{{ url_for('booking', room_id=room.id) }}" class="btn btn-primary">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No rooms available at the moment. Please check back later.
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Price range slider
+    const priceRange = document.getElementById('price-range');
+    const priceValue = document.getElementById('price-value');
+    const roomItems = document.querySelectorAll('.room-item');
+    const applyFilterBtn = document.getElementById('apply-filter');
+    const resetFilterBtn = document.getElementById('reset-filter');
+    const sortSelect = document.getElementById('sort-by');
+    
+    // Update price value display
+    priceRange.addEventListener('input', function() {
+        priceValue.textContent = this.value;
+    });
+    
+    // Apply filters
+    applyFilterBtn.addEventListener('click', function() {
+        const maxPrice = parseInt(priceRange.value);
+        const capacity12 = document.getElementById('capacity-1-2').checked;
+        const capacity34 = document.getElementById('capacity-3-4').checked;
+        const capacity5 = document.getElementById('capacity-5').checked;
+        
+        roomItems.forEach(item => {
+            const price = parseFloat(item.dataset.price);
+            const capacity = parseInt(item.dataset.capacity);
+            
+            let showCapacity = false;
+            if ((capacity <= 2 && capacity12) || 
+                (capacity >= 3 && capacity <= 4 && capacity34) || 
+                (capacity >= 5 && capacity5)) {
+                showCapacity = true;
+            }
+            
+            item.style.display = (price <= maxPrice && showCapacity) ? '' : 'none';
+        });
+    });
+    
+    // Reset filters
+    resetFilterBtn.addEventListener('click', function() {
+        document.getElementById('filter-form').reset();
+        priceValue.textContent = '500';
+        roomItems.forEach(item => {
+            item.style.display = '';
+        });
+    });
+    
+    // Sort rooms
+    sortSelect.addEventListener('change', function() {
+        const sortValue = this.value;
+        const roomsContainer = document.getElementById('rooms-container');
+        const roomsArray = Array.from(roomItems);
+        
+        roomsArray.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price);
+            const priceB = parseFloat(b.dataset.price);
+            const capacityA = parseInt(a.dataset.capacity);
+            const capacityB = parseInt(b.dataset.capacity);
+            
+            if (sortValue === 'price-asc') {
+                return priceA - priceB;
+            } else if (sortValue === 'price-desc') {
+                return priceB - priceA;
+            } else if (sortValue === 'capacity-asc') {
+                return capacityA - capacityB;
+            } else if (sortValue === 'capacity-desc') {
+                return capacityB - capacityA;
+            }
+        });
+        
+        // Re-append sorted items
+        roomsArray.forEach(item => {
+            roomsContainer.appendChild(item);
+        });
+    });
+});
+</script>
+{% endblock %}

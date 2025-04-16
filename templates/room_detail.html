@@ -1,0 +1,277 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ room.name }} - Luxury Hotel{% endblock %}
+
+{% block content %}
+<!-- Room Detail Section -->
+<section class="py-5">
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('rooms') }}">Rooms</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ room.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="row">
+            <div class="col-lg-8 mb-4 mb-lg-0">
+                <img src="{{ room.image_url }}" class="img-fluid rounded room-detail-img mb-4" alt="{{ room.name }}">
+                
+                <h1 class="mb-3">{{ room.name }}</h1>
+                
+                <div class="d-flex align-items-center mb-4">
+                    <span class="me-3 badge bg-primary fs-6">${{ "%.2f"|format(room.price) }} / night</span>
+                    <span class="me-3 badge bg-info fs-6"><i class="fas fa-user me-1"></i> {{ room.capacity }} Guests</span>
+                    {% if room.is_available %}
+                        <span class="badge bg-success fs-6">Available</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">Not Available</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <h4>Description</h4>
+                    <p>{{ room.description }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h4>Amenities</h4>
+                    <ul class="list-group list-group-flush amenity-list">
+                        {% for amenity in room.amenities.split(', ') %}
+                            <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> {{ amenity }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="mb-4">
+                    <h4>Policies</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-calendar-check me-2 text-primary"></i> Check-in/Check-out</h5>
+                                    <ul class="list-unstyled mb-0">
+                                        <li>Check-in: From 14:00</li>
+                                        <li>Check-out: Until 12:00</li>
+                                        <li>Early check-in/late check-out available (fees may apply)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-ban me-2 text-primary"></i> Cancellation Policy</h5>
+                                    <ul class="list-unstyled mb-0">
+                                        <li>Free cancellation up to 24 hours before check-in</li>
+                                        <li>50% refund if cancelled less than 24 hours</li>
+                                        <li>No refund for no-shows</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 1rem;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Book This Room</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if room.is_available %}
+                            <form id="availability-check-form">
+                                <div class="mb-3">
+                                    <label for="check-in" class="form-label">Check-in Date</label>
+                                    <input type="date" class="form-control" id="check-in" name="check-in" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="check-out" class="form-label">Check-out Date</label>
+                                    <input type="date" class="form-control" id="check-out" name="check-out" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="guests" class="form-label">Number of Guests</label>
+                                    <select class="form-select" id="guests" name="guests" required>
+                                        {% for i in range(1, room.capacity + 1) %}
+                                            <option value="{{ i }}">{{ i }} {{ 'Person' if i == 1 else 'People' }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div id="availability-message" class="alert alert-info d-none"></div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" id="check-availability-btn" class="btn btn-info">Check Availability</button>
+                                    <a href="{{ url_for('booking', room_id=room.id) }}" class="btn btn-primary">Book Now</a>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                Sorry, this room is currently not available for booking. Please check other rooms or contact us for more information.
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Room Price</span>
+                            <span>${{ "%.2f"|format(room.price) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Taxes & Fees (10%)</span>
+                            <span>${{ "%.2f"|format(room.price * 0.1) }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center fw-bold">
+                            <span>Total Per Night</span>
+                            <span>${{ "%.2f"|format(room.price * 1.1) }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Need Help?</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Have questions about this room or the booking process? Our support team is ready to help.</p>
+                        <div class="d-grid">
+                            <a href="tel:+1234567890" class="btn btn-outline-primary mb-2">
+                                <i class="fas fa-phone me-2"></i> Call Us
+                            </a>
+                            <a href="mailto:support@luxuryhotel.com" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i> Email Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Similar Rooms Section -->
+<section class="py-5 bg-dark">
+    <div class="container">
+        <h3 class="mb-4">You Might Also Like</h3>
+        <div class="row">
+            {% for i in range(1, 4) %}
+                {% if loop.index != room.id %}
+                <div class="col-md-4 mb-4">
+                    <div class="card room-card h-100">
+                        <img src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" class="card-img-top" alt="Similar Room">
+                        <div class="card-body">
+                            <h5 class="card-title">Similar Room {{ loop.index }}</h5>
+                            <p class="card-text">Another comfortable option with great amenities for your stay.</p>
+                            <p class="fw-bold">${{ "%.2f"|format(room.price * 0.9) }} / night</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <a href="{{ url_for('rooms') }}" class="btn btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date inputs
+    const checkInInput = document.getElementById('check-in');
+    const checkOutInput = document.getElementById('check-out');
+    const checkAvailabilityBtn = document.getElementById('check-availability-btn');
+    const availabilityMessage = document.getElementById('availability-message');
+    
+    if (checkInInput && checkOutInput) {
+        // Set minimum dates
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        checkInInput.min = formatDate(today);
+        checkOutInput.min = formatDate(tomorrow);
+        
+        // Update checkout min date when check-in changes
+        checkInInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const nextDay = new Date(selectedDate);
+            nextDay.setDate(selectedDate.getDate() + 1);
+            
+            checkOutInput.min = formatDate(nextDay);
+            
+            // If checkout date is now invalid, update it
+            if (new Date(checkOutInput.value) <= selectedDate) {
+                checkOutInput.value = formatDate(nextDay);
+            }
+        });
+        
+        // Check availability button
+        if (checkAvailabilityBtn) {
+            checkAvailabilityBtn.addEventListener('click', function() {
+                const checkIn = checkInInput.value;
+                const checkOut = checkOutInput.value;
+                
+                if (!checkIn || !checkOut) {
+                    availabilityMessage.textContent = 'Please select both check-in and check-out dates.';
+                    availabilityMessage.className = 'alert alert-warning';
+                    availabilityMessage.classList.remove('d-none');
+                    return;
+                }
+                
+                if (new Date(checkIn) >= new Date(checkOut)) {
+                    availabilityMessage.textContent = 'Check-out date must be after check-in date.';
+                    availabilityMessage.className = 'alert alert-warning';
+                    availabilityMessage.classList.remove('d-none');
+                    return;
+                }
+                
+                // Show loading
+                availabilityMessage.textContent = 'Checking availability...';
+                availabilityMessage.className = 'alert alert-info';
+                availabilityMessage.classList.remove('d-none');
+                
+                // Call API to check availability
+                fetch('/api/check_availability', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        room_id: {{ room.id }},
+                        check_in: checkIn,
+                        check_out: checkOut
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available) {
+                        availabilityMessage.textContent = 'Room is available for the selected dates!';
+                        availabilityMessage.className = 'alert alert-success';
+                    } else {
+                        availabilityMessage.textContent = 'Sorry, the room is not available for the selected dates.';
+                        availabilityMessage.className = 'alert alert-danger';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking availability:', error);
+                    availabilityMessage.textContent = 'Error checking availability. Please try again.';
+                    availabilityMessage.className = 'alert alert-warning';
+                });
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
